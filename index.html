@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>線性規劃 (Linear Programming) · 高中選修數學乙(下) 互動學習平台</title>
+  <link rel="stylesheet" href="styles.css">
+  <!-- KaTeX 數學公式即時渲染 (具備離線降級容錯) -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css" crossorigin="anonymous">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js" crossorigin="anonymous"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js" crossorigin="anonymous"
+    onload="renderMathInElement(document.body, {delimiters: [{left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}]});"></script>
+</head>
+<body>
+
+  <!-- 頂部導覽列 -->
+  <header>
+    <div class="header-container">
+      <div class="brand">
+        <div class="brand-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="3" y1="20" x2="21" y2="20"></line>
+            <line x1="3" y1="4" x2="3" y2="20"></line>
+            <line x1="3" y1="16" x2="16" y2="4"></line>
+            <circle cx="9" cy="11" r="2.5" fill="#38bdf8"></circle>
+            <circle cx="16" cy="4" r="2.5" fill="#34d399"></circle>
+          </svg>
+        </div>
+        <div>
+          <div class="brand-title">線性規劃 (Linear Programming)</div>
+          <div class="brand-subtitle">高中選修數學乙(下) 第一章 · 全功能互動探索平台</div>
+        </div>
+      </div>
+
+      <nav class="nav-tabs">
+        <button class="tab-btn active" data-tab="lab">
+          <span>🔬</span> 互動實驗室
+        </button>
+        <button class="tab-btn" data-tab="curriculum">
+          <span>📘</span> 章節觀念精講
+        </button>
+        <button class="tab-btn" data-tab="sandbox">
+          <span>🛠️</span> 自訂沙盒求解器
+        </button>
+        <button class="tab-btn" data-tab="exercises">
+          <span>📝</span> 課後習題全解析
+        </button>
+        <button class="tab-btn" data-tab="quiz">
+          <span>🧠</span> 觀念隨堂測驗
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <!-- ==================== 1. 互動實驗室分頁 ==================== -->
+    <section id="sec-lab" class="view-section active">
+      <div class="lab-layout">
+        <!-- 左側：幾何畫布與視覺控制 -->
+        <div class="canvas-wrapper">
+          <div class="canvas-header">
+            <div class="canvas-title">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+              動態坐標平面（可拖曳平移、滾輪縮放）
+            </div>
+            <div class="canvas-controls-top">
+              <button class="tool-btn" id="btnZoomIn" title="放大">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line><line x1="11" y1="8" x2="11" y2="14"></line><line x1="8" y1="11" x2="14" y2="11"></line></svg>
+                放大
+              </button>
+              <button class="tool-btn" id="btnZoomOut" title="縮小">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line><line x1="8" y1="11" x2="14" y2="11"></line></svg>
+                縮小
+              </button>
+              <button class="tool-btn" id="btnResetView" title="重設視角">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path></svg>
+                置中視角
+              </button>
+            </div>
+          </div>
+
+          <div class="canvas-container">
+            <canvas id="mathCanvas"></canvas>
+            <div class="canvas-overlay-info" id="coordReadout">X: 0.00, Y: 0.00</div>
+          </div>
+
+          <div class="canvas-toolbar-bottom">
+            <!-- 目標函數平移掃描滑桿 -->
+            <div class="slider-container">
+              <span>目標線掃描 ($k$ 值)：</span>
+              <input type="range" id="kSlider" min="0" max="100" value="0" step="1">
+              <span class="slider-val-badge" id="kSliderVal">0.0</span>
+              <button class="btn-anim" id="btnAnimate">
+                ▶️ 播放平移掃描
+              </button>
+            </div>
+
+            <!-- 視覺顯示開關 -->
+            <div class="toggle-group">
+              <label class="toggle-label">
+                <input type="checkbox" data-toggle="showFeasibleRegion" checked> 可行解區域 (Feasible Region)
+              </label>
+              <label class="toggle-label">
+                <input type="checkbox" data-toggle="showVertices" checked> 頂點與數值代入
+              </label>
+              <label class="toggle-label">
+                <input type="checkbox" data-toggle="showObjLine" checked> 當前目標函數線
+              </label>
+              <label class="toggle-label">
+                <input type="checkbox" data-toggle="showParallelFamily" checked> 平行直線系族
+              </label>
+              <label class="toggle-label">
+                <input type="checkbox" data-toggle="showLattice"> 整數格子點 (Lattice)
+              </label>
+              <label class="toggle-label">
+                <input type="checkbox" data-toggle="showLabels" checked> 方程式標籤
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- 右側：題目設定、限制條件與頂點法求解表 -->
+        <div class="info-sidebar">
+          <div class="panel">
+            <div class="preset-selector">
+              <label for="presetSelect">選擇課本範例或題型：</label>
+              <select id="presetSelect" class="preset-dropdown">
+                <optgroup label="課本引入與平行線">
+                  <option value="intro">🌟 章首生活實例：小毅的學期成績</option>
+                  <option value="parallel_1">📐 例題 1：平行直線系平移 (x - y = k)</option>
+                  <option value="parallel_2">📐 例題 2：截距與常數項 (2x + y = k)</option>
+                </optgroup>
+                <optgroup label="不等式半平面">
+                  <option value="ineq_halfplane">🌓 例題 3：聯立不等式半平面交集</option>
+                </optgroup>
+                <optgroup label="線性規劃核心方法">
+                  <option value="lp_ex4">🎯 例題 4：標準線性規劃問題 (x + 3y)</option>
+                  <option value="lp_practice4">🎯 隨堂練習 4：頂點法極值檢驗</option>
+                </optgroup>
+                <optgroup label="生活與商業應用">
+                  <option value="app_oil">🏭 例題 5：精油提煉資源最大化</option>
+                  <option value="app_alloy">🏭 隨堂練習 5：大禹鍛冶工廠合金利潤</option>
+                  <option value="app_factory">🏭 例題 6：合金訂單最低成本</option>
+                </optgroup>
+                <optgroup label="課後進階與素養">
+                  <option value="ex_lattice">📝 習題 5：整數解（格子點）計數</option>
+                  <option value="ex_multisol">📝 習題 9：多重最佳解（線段解）</option>
+                </optgroup>
+              </select>
+            </div>
+
+            <div class="panel-title">
+              <span id="problemTitle">章首生活實例：小毅的學期成績</span>
+              <span class="badge" id="problemBadge">極值求法</span>
+            </div>
+
+            <div style="font-size: 0.85rem; color: var(--accent-primary); margin-bottom: 0.5rem;" id="problemCategory">
+              生活素養問題
+            </div>
+
+            <p id="problemDesc" style="color: #cbd5e1; font-size: 0.95rem; margin-bottom: 1.25rem;">
+              題目描述載入中...
+            </p>
+
+            <!-- 頂點法計算表格 -->
+            <div style="margin-bottom: 1.25rem;">
+              <h4 style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 0.5rem; display: flex; justify-content: space-between;">
+                <span>頂點法 (Vertex Method) 數值檢驗表</span>
+                <span style="color: var(--accent-success);">● 最佳解高亮</span>
+              </h4>
+              <table class="data-table" id="vertexTable">
+                <thead>
+                  <tr>
+                    <th>頂點</th>
+                    <th>坐標 (x, y)</th>
+                    <th>目標函數值</th>
+                    <th>判定</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <!-- 動態產生 -->
+                </tbody>
+              </table>
+            </div>
+
+            <!-- 解析與觀念推導 -->
+            <div class="math-card">
+              <h4 style="font-weight: 600; color: var(--accent-primary); margin-bottom: 0.4rem;">💡 數學推導與解析</h4>
+              <div id="problemExplanation" style="font-size: 0.9rem; line-height: 1.7; color: #cbd5e1;">
+                推導載入中...
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== 2. 課本章節觀念精講 ==================== -->
+    <section id="sec-curriculum" class="view-section">
+      <div style="margin-bottom: 2rem;">
+        <h2 style="font-size: 1.6rem; color: var(--text-main); margin-bottom: 0.5rem;">📘 第一章 線性規劃 · 系統化知識導覽</h2>
+        <p style="color: var(--text-muted);">本章涵蓋從平面幾何、二元一次不等式、半平面，一直到線性規劃的兩大求解利器：「平行線法」與「頂點法」。</p>
+      </div>
+
+      <div class="chapter-content">
+        <!-- 單元 1 -->
+        <div class="concept-card">
+          <h3><span>1.</span> 平行直線系 (Parallel Lines)</h3>
+          <p>在坐標平面上，斜率相等的兩相異直線必互相平行。平移直線只會改變位置，不會改變直線的斜率。</p>
+          <ul>
+            <li><strong>直線一般式：</strong>$L: ax + by + c = 0$ ($b \ne 0$)，斜率為 $m = -\frac{a}{b}$。</li>
+            <li><strong>平行直線系：</strong>保持 $x, y$ 的係數比不變，僅改變常數項 $c$，即可得到一組互相平行的直線族 $ax + by = k$。</li>
+            <li><strong>截距變化：</strong>當 $a, b > 0$ 時，$k$ 越大，直線的 $x$ 截距與 $y$ 截距均隨之增大，直線往右上方平移。</li>
+          </ul>
+          <div class="math-card secondary">
+            <strong>例題重點：</strong>平移直線 $L_0: x-y=0$ 向右平移 $h$ 單位得 $x-y=h$；向左平移得 $x-y=-h$。
+          </div>
+        </div>
+
+        <!-- 單元 2 -->
+        <div class="concept-card">
+          <h3><span>2.</span> 二元一次不等式與半平面</h3>
+          <p>任意一條直線 $ax + by + c = 0$ 都會將坐標平面切割為左右或上下的兩個「半平面」。</p>
+          <ul>
+            <li><strong>實線與虛線：</strong>不等式包含等號（$\ge, \le$）時邊界包含在內，畫<strong>實線</strong>；不包含等號（$>, <$）時畫<strong>虛線</strong>。</li>
+            <li><strong>檢驗點法：</strong>選取一個不在直線上的點（首選原點 $(0,0)$ 或 $(1,0)$）代入不等式。若符合，則該點所在的半平面即為解的區域！</li>
+            <li><strong>聯立不等式：</strong>多個不等式的交集，即為各自半平面的重疊區域。</li>
+          </ul>
+          <div class="math-card">
+            <strong>公式口訣：</strong>代入原點 $(0,0)$，若不等式成立則取「含原點之半平面」，反之取「不含原點之半平面」。
+          </div>
+        </div>
+
+        <!-- 單元 3 -->
+        <div class="concept-card">
+          <h3><span>3.</span> 線性規劃兩大解題法</h3>
+          <p>當目標函數為一次函數 $P(x,y) = ax + by$，且限制條件均為一次不等式時，稱為線性規劃。</p>
+          <ul>
+            <li><strong>可行解與可行解區域：</strong>滿足所有限制條件的數對 $(x,y)$ 構成可行解區域（通常為凸多邊形）。</li>
+            <li><strong>平行線法：</strong>令 $ax + by = k$，在可行解區域內平行平移此直線，找尋最後接觸區域的切點。</li>
+            <li><strong>頂點法（極值定理）：</strong>有界凸多邊形的可行解區域，目標函數的最大值或最小值<strong>必在頂點（或邊界）出現</strong>！只需算出所有交點坐標代入比較即可。</li>
+          </ul>
+          <div class="math-card success">
+            <strong>解題三部曲：</strong>1. 畫出可行解區域 → 2. 求出所有頂點坐標 → 3. 代入目標函數比較大小。
+          </div>
+        </div>
+
+        <!-- 單元 4 -->
+        <div class="concept-card">
+          <h3><span>4.</span> 生活與商業決策應用</h3>
+          <p>現實生活中的資源最佳配置問題（如原料調配、廢棄物限制、利潤最大化、生產成本最低化）。</p>
+          <ul>
+            <li><strong>精油提煉（例題 5）：</strong>在成本 $\le 240$ 萬、廢棄物 $\le 750$ kg 的雙重限制下，提煉出最大精油量約 297.14 kg。</li>
+            <li><strong>工廠訂單生產（例題 6）：</strong>在達成客戶金屬純度標準下，透過甲、乙工廠排程使總成本降至最低。</li>
+            <li><strong>隱含條件不可漏：</strong>實際生活問題中，原料量、產量、工時均不可為負，務必列出隱含條件 $x \ge 0, y \ge 0$。</li>
+          </ul>
+          <div class="math-card">
+            <strong>素養關鍵：</strong>先設變數 $(x, y)$，明確列出限制聯立式，再定義目標函數 $P(x,y)$。
+          </div>
+        </div>
+
+        <!-- 單元 5 -->
+        <div class="concept-card">
+          <h3><span>5.</span> 數學史專欄：諾貝爾獎榮譽</h3>
+          <p>線性規劃最早於 1920～1930 年代由前蘇聯數學家坎拓羅維奇（Leonid Kantorovich）與經濟學家李安鐵夫（Wassily Leontief）提出。</p>
+          <ul>
+            <li><strong>坎拓羅維奇 (1912～1986)：</strong>首創將線性不等式應用於生產排程，榮獲 1975 年諾貝爾經濟學獎。</li>
+            <li><strong>李安鐵夫 (1905～1999)：</strong>建立「投入產出模型（Input-Output Model）」，榮獲 1973 年諾貝爾經濟學獎。</li>
+            <li><strong>現代發展：</strong>結合現代電腦演算法（單純形法 Simplex Method、內點法），廣泛應用於全球航線調度、物流供應鏈與晶片設計。</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== 3. 自訂沙盒求解器 ==================== -->
+    <section id="sec-sandbox" class="view-section">
+      <div class="panel">
+        <div class="panel-title">
+          <span>🛠️ 自訂線性規劃模型沙盒 (Custom LP Sandbox)</span>
+          <span class="badge">自訂限制與目標</span>
+        </div>
+        <p style="color: var(--text-muted); margin-bottom: 1.5rem;">
+          在下方輸入任意多個二元一次不等式與目標函數，求解引擎將自動計算邊界直線交點、建構可行解凸多邊形、求解最佳頂點，並在互動畫布中呈現！
+        </p>
+
+        <div class="sandbox-input-grid">
+          <div class="input-field" style="grid-column: 1 / -1;">
+            <label>限制條件 (每行一個不等式，支援 x, y 係數與 <=, >=, <, >)：</label>
+            <textarea id="customConstraints" rows="5" style="background: var(--bg-secondary); border: 1px solid var(--border-subtle); color: white; padding: 0.75rem; border-radius: 8px; font-family: monospace; font-size: 0.95rem;">x + 2y <= 6
+2x + y <= 6
+x >= 0
+y >= 0</textarea>
+          </div>
+
+          <div class="input-field">
+            <label>目標函數表達式 (例如 x + 3y 或 50x + 30y)：</label>
+            <input type="text" id="customObj" value="x + 3y">
+          </div>
+
+          <div class="input-field">
+            <label>最佳化目標：</label>
+            <select id="customOptType">
+              <option value="max">求最大值 (Maximize)</option>
+              <option value="min">求最小值 (Minimize)</option>
+            </select>
+          </div>
+        </div>
+
+        <button class="btn-primary" id="btnSolveCustom">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+          立即求解並切換至畫布視覺化
+        </button>
+      </div>
+    </section>
+
+    <!-- ==================== 4. 課後習題全解析 ==================== -->
+    <section id="sec-exercises" class="view-section">
+      <div style="margin-bottom: 1.5rem;">
+        <h2 style="font-size: 1.5rem; color: var(--text-main); margin-bottom: 0.3rem;">📝 課後習題 1 完整精解 (基本題 · 進階題 · 素養題)</h2>
+        <p style="color: var(--text-muted);">點擊題目卡片可展開詳細數學推導與解答，亦可直接點擊「載入畫布」進行動態圖解！</p>
+      </div>
+
+      <!-- 基本題 1 -->
+      <div class="exercise-item">
+        <div class="exercise-header">
+          <div class="exercise-title">
+            <span class="badge" style="background: rgba(56, 189, 248, 0.2); color: #38bdf8;">基本題 1</span>
+            二元一次聯立不等式繪圖：3x + 2y - 12 ≤ 0 且 x + y - 2 > 0
+          </div>
+          <span class="arrow">▼</span>
+        </div>
+        <div class="exercise-body">
+          <p><strong>題目：</strong>在坐標平面上畫出聯立不等式 $\begin{cases} 3x + 2y - 12 \le 0 \\ x + y - 2 > 0 \end{cases}$ 的圖形。</p>
+          <div class="solution-box">
+            <strong>詳細題解：</strong><br>
+            1. 畫直線 $L_1: 3x + 2y - 12 = 0$，與兩軸交點為 $(4, 0)$ 和 $(0, 6)$。因包含等號，以<strong>實線</strong>繪製。代入原點 $(0,0)$ 得 $-12 \le 0$ 符合，故取含原點的一側。<br>
+            2. 畫直線 $L_2: x + y - 2 = 0$，與兩軸交點為 $(2, 0)$ 和 $(0, 2)$。因不包含等號，以<strong>虛線</strong>繪製。代入原點 $(0,0)$ 得 $-2 > 0$ 不合，故取不含原點的一側。<br>
+            3. 取兩半平面的共同交集，即為直線 $L_2$ 之右上方與直線 $L_1$ 之左下方所夾區域。
+          </div>
+        </div>
+      </div>
+
+      <!-- 基本題 2 -->
+      <div class="exercise-item">
+        <div class="exercise-header">
+          <div class="exercise-title">
+            <span class="badge" style="background: rgba(56, 189, 248, 0.2); color: #38bdf8;">基本題 2</span>
+            從三角形區域圖形逆推二元一次聯立不等式
+          </div>
+          <span class="arrow">▼</span>
+        </div>
+        <div class="exercise-body">
+          <p><strong>題目：</strong>解集合為頂點 $(0,1), (3,2), (6,0)$ 所圍成之三角形區域，試寫出此聯立不等式。</p>
+          <div class="solution-box">
+            <strong>詳細題解：</strong><br>
+            1. 求過 $(0,1)$ 與 $(3,2)$ 之直線：斜率 $m = \frac{2-1}{3-0} = \frac{1}{3} \implies x - 3y + 3 = 0$。三角形內部點 $(3,1)$ 代入得 $3 - 3 + 3 = 3 \ge 0 \implies x - 3y + 3 \ge 0$。<br>
+            2. 求過 $(3,2)$ 與 $(6,0)$ 之直線：斜率 $m = \frac{0-2}{6-3} = -\frac{2}{3} \implies 2x + 3y - 12 = 0$。代入內部點得 $2(3) + 3(1) - 12 = -3 \le 0 \implies 2x + 3y - 12 \le 0$。<br>
+            3. 求過 $(0,1)$ 與 $(6,0)$ 之直線：斜率 $m = -\frac{1}{6} \implies x + 6y - 6 = 0$。內部點代入得 $x + 6y - 6 \ge 0$。<br>
+            <strong>答案：</strong>$\begin{cases} x - 3y + 3 \ge 0 \\ 2x + 3y - 12 \le 0 \\ x + 6y - 6 \ge 0 \end{cases}$
+          </div>
+        </div>
+      </div>
+
+      <!-- 基本題 3 -->
+      <div class="exercise-item">
+        <div class="exercise-header">
+          <div class="exercise-title">
+            <span class="badge" style="background: rgba(56, 189, 248, 0.2); color: #38bdf8;">基本題 3</span>
+            平行線之平移量計算 (L1: 2x - y = 1, L2: 2x - y = 3)
+          </div>
+          <span class="arrow">▼</span>
+        </div>
+        <div class="exercise-body">
+          <p><strong>題目：</strong>已知 $L_1: 2x - y = 1$，$L_2: 2x - y = 3$。(1) 若 $L_1$ 向右平移 $k$ 單位得 $L_2$，則 $k$ 值為何？ (2) 若 $L_2$ 向上平移 $h$ 單位得 $L_1$，則 $h$ 值為何？</p>
+          <div class="solution-box">
+            <strong>詳細題解：</strong><br>
+            (1) 向右平移 $k$ 單位，以 $(x - k)$ 代入 $L_1$：<br>
+            $2(x - k) - y = 1 \implies 2x - y = 1 + 2k$。對照 $L_2: 2x - y = 3 \implies 1 + 2k = 3 \implies \mathbf{k = 1}$。<br><br>
+            (2) 向上平移 $h$ 單位，以 $(y - h)$ 代入 $L_2$：<br>
+            $2x - (y - h) = 3 \implies 2x - y = 3 - h$。對照 $L_1: 2x - y = 1 \implies 3 - h = 1 \implies \mathbf{h = 2}$。
+          </div>
+        </div>
+      </div>
+
+      <!-- 基本題 4 -->
+      <div class="exercise-item">
+        <div class="exercise-header">
+          <div class="exercise-title">
+            <span class="badge" style="background: rgba(56, 189, 248, 0.2); color: #38bdf8;">基本題 4</span>
+            四點 A, B, C, D 代入目標函數 x - 2y = k 哪一點所得 k 值最大？
+          </div>
+          <span class="arrow">▼</span>
+        </div>
+        <div class="exercise-body">
+          <p><strong>題目：</strong>給定點 $A, B, C, D$ 及直線 $L: x - 2y = 0$，哪一點代入 $x - 2y = k$ 所得 $k$ 值最大？</p>
+          <div class="solution-box">
+            <strong>幾何直觀判定：</strong><br>
+            直線方程式為 $x - 2y = k$，斜率為 $\frac{1}{2}$，$x$ 截距為 $k$。<br>
+            因此，當直線平行向<strong>右下方</strong>平移時，$x$ 截距 $k$ 越大！<br>
+            觀察四點相對位置，點 <strong>D</strong> 位在最右下方，故點 D 代入時能得到最大的 $k$ 值。
+          </div>
+        </div>
+      </div>
+
+      <!-- 基本題 5 -->
+      <div class="exercise-item">
+        <div class="exercise-header">
+          <div class="exercise-title">
+            <span class="badge" style="background: rgba(56, 189, 248, 0.2); color: #38bdf8;">基本題 5</span>
+            整數解（格子點）計數問題 (3x + 2y ≤ 6, x ≥ 0, y ≥ 0)
+          </div>
+          <span class="arrow">▼</span>
+        </div>
+        <div class="exercise-body">
+          <p><strong>題目：</strong>求滿足 $3x + 2y \le 6, x \ge 0, y \ge 0$ 的整數解 $(x, y)$ 共有幾組？</p>
+          <div style="margin: 0.5rem 0;">
+            <button class="tool-btn" data-load-preset="ex_lattice">🚀 載入至畫布顯示 7 個黃色發光格子點</button>
+          </div>
+          <div class="solution-box">
+            <strong>詳細枚舉：</strong><br>
+            • 當 $x = 0$ 時：$2y \le 6 \implies y \in \{0, 1, 2, 3\}$（4 組）<br>
+            • 當 $x = 1$ 時：$2y \le 3 \implies y \in \{0, 1\}$（2 組）<br>
+            • 當 $x = 2$ 時：$2y \le 0 \implies y = 0$（1 組）<br>
+            • 當 $x \ge 3$ 時：無非負整數解。<br>
+            全部共有 $4 + 2 + 1 =$ <strong>7 組整數解</strong>。
+          </div>
+        </div>
+      </div>
+
+      <!-- 進階題 6 -->
+      <div class="exercise-item">
+        <div class="exercise-header">
+          <div class="exercise-title">
+            <span class="badge" style="background: rgba(129, 140, 248, 0.2); color: #818cf8;">進階題 6</span>
+            符號分析與常數項大小判定 (L: ax + by = c, 已知 a < 0)
+          </div>
+          <span class="arrow">▼</span>
+        </div>
+        <div class="exercise-body">
+          <p><strong>題目：</strong>$L_1: ax+by=c_1, L_2: ax+by=c_2, L_3: ax+by=c_3$，已知 $a < 0$ 且由左至右分別為 $L_3, L_2, L_1$。(1) $b$ 為正或負？ (2) 比較 $c_1, c_2, c_3$ 大小。</p>
+          <div class="solution-box">
+            <strong>詳細題解：</strong><br>
+            (1) 觀察圖形，直線呈右上至左下傾斜，斜率 $m > 0$。<br>
+            斜率公式 $m = -\frac{a}{b}$。因 $a < 0 \implies -a > 0$，要使 $m > 0$，分母必須為正數，故 $\mathbf{b > 0}$。<br><br>
+            (2) 直線與 $x$ 軸之交點為 $(\frac{c}{a}, 0)$。由圖可知由左而右 $x$ 截距依次增大：<br>
+            $\frac{c_3}{a} < \frac{c_2}{a} < \frac{c_1}{a}$。<br>
+            因已知 $a < 0$，不等式同乘以負數 $a$ 需<strong>變號</strong>，得：<br>
+            $\mathbf{c_3 > c_2 > c_1}$（即 $c_1 < c_2 < c_3$）。
+          </div>
+        </div>
+      </div>
+
+      <!-- 進階題 7 -->
+      <div class="exercise-item">
+        <div class="exercise-header">
+          <div class="exercise-title">
+            <span class="badge" style="background: rgba(129, 140, 248, 0.2); color: #818cf8;">進階題 7</span>
+            正六邊形 ABCDEF 頂點求 3x - 2y = k 最大值
+          </div>
+          <span class="arrow">▼</span>
+        </div>
+        <div class="exercise-body">
+          <p><strong>題目：</strong>正六邊形 $ABCDEF$ 底邊在 x 軸上，$L: 3x - 2y - k = 0$，問通過哪一個頂點時可使 $k$ 值最大？</p>
+          <div class="solution-box">
+            <strong>斜率平移法：</strong><br>
+            直線為 $3x - 2y = k \implies y = \frac{3}{2}x - \frac{k}{2}$，斜率為 $1.5$。<br>
+            $k = 3x - 2y$，要使 $k$ 最大，需讓 $x$ 盡量大且 $y$ 盡量小（即往平面<strong>最右下方</strong>移動）。<br>
+            檢視正六邊形各頂點位置，頂點 <strong>B</strong>（位於 x 軸正向最右下端點）能使 $k$ 達到最大值。
+          </div>
+        </div>
+      </div>
+
+      <!-- 進階題 8 -->
+      <div class="exercise-item">
+        <div class="exercise-header">
+          <div class="exercise-title">
+            <span class="badge" style="background: rgba(129, 140, 248, 0.2); color: #818cf8;">進階題 8</span>
+            兩貨倉至兩工廠之經典運輸問題 (最低運費最佳化)
+          </div>
+          <span class="arrow">▼</span>
+        </div>
+        <div class="exercise-body">
+          <p><strong>題目：</strong>貨倉甲存50噸、乙存60噸；A工廠訂購40噸、B工廠訂購50噸。甲→A運費500元、甲→B 600元；乙→A 650元、乙→B 700元。如何調度運費最省？</p>
+          <div class="solution-box">
+            <strong>建模與線性規劃：</strong><br>
+            設貨倉甲運送 $x$ 噸至 A 工廠，$y$ 噸至 B 工廠。則：<br>
+            • 乙運送 $(40 - x)$ 噸至 A 工廠，$(50 - y)$ 噸至 B 工廠。<br>
+            • 甲總量：$x + y \le 50$ 且 $x \ge 0, y \ge 0$。<br>
+            • 乙總量：$(40 - x) + (50 - y) \le 60 \implies x + y \ge 30$。<br>
+            • 需求上限：$x \le 40, y \le 50$。<br>
+            總運費 $C = 500x + 600y + 650(40 - x) + 700(50 - y) = 61000 - (150x + 100y)$。<br>
+            要使運費 $C$ 最小，需使 $150x + 100y$ 達到最大。<br>
+            可行解頂點有 $(40, 0), (40, 10), (0, 50), (0, 30), (30, 0)$。<br>
+            在頂點 $(40, 10)$ 時，$150(40) + 100(10) = 7000$ 為最大，此時運費為 $61000 - 7000 =$ <strong>54,000 元</strong>。<br>
+            <strong>調度策略：</strong>甲送 A 40噸、甲送 B 10噸；乙送 A 0噸、乙送 B 40噸。
+          </div>
+        </div>
+      </div>
+
+      <!-- 素養題 9 -->
+      <div class="exercise-item">
+        <div class="exercise-header">
+          <div class="exercise-title">
+            <span class="badge" style="background: rgba(244, 63, 94, 0.2); color: #f43f5e;">素養題 9</span>
+            多重最佳解（兩端點同時達最大值求參數 k）
+          </div>
+          <span class="arrow">▼</span>
+        </div>
+        <div class="exercise-body">
+          <p><strong>題目：</strong>可行解為三角形 ABC 及其內部，目標函數為 $x + ky$。若在 $(5, 3)$ 與 $(7, 7)$ 同時達到最大值，則 $k$ 值為何？</p>
+          <div style="margin: 0.5rem 0;">
+            <button class="tool-btn" data-load-preset="ex_multisol">🚀 載入至畫布觀察平行線段解</button>
+          </div>
+          <div class="solution-box">
+            <strong>核心幾何原理：</strong><br>
+            若目標函數在兩相異頂點同時達到最大值，則連接這兩點的整條邊界線段上的每一點皆為最佳解，此時目標函數的等高線必與該邊界平行！<br>
+            將兩點坐標代入 $P = x + ky$：<br>
+            $5 + 3k = 7 + 7k \implies 4k = -2 \implies \mathbf{k = -\frac{1}{2} = -0.5}$。
+          </div>
+        </div>
+      </div>
+
+      <!-- 素養題 10 -->
+      <div class="exercise-item">
+        <div class="exercise-header">
+          <div class="exercise-title">
+            <span class="badge" style="background: rgba(244, 63, 94, 0.2); color: #f43f5e;">素養題 10</span>
+            禽流感防範：雞群飼料營養素最低成本最佳化
+          </div>
+          <span class="arrow">▼</span>
+        </div>
+        <div class="exercise-body">
+          <p><strong>題目：</strong>營養需求：A ≥ 84, B ≥ 72, C ≥ 60 單位。第1種飼料每kg 5元（含A:7, B:3, C:3）；第2種每kg 4元（含A:2, B:6, C:2）。如何調配使成本最低？</p>
+          <div class="solution-box">
+            <strong>列式與頂點求解：</strong><br>
+            (1) 限制條件：<br>
+            • A: $7x + 2y \ge 84$<br>
+            • B: $3x + 6y \ge 72 \implies x + 2y \ge 24$<br>
+            • C: $3x + 2y \ge 60$<br>
+            • $x \ge 0, y \ge 0$<br>
+            (2) 目標函數：成本 $C = 5x + 4y$ (元)<br>
+            (3) 頂點求解：<br>
+            • $(0, 42) \implies C = 168$<br>
+            • $(6, 21)$［解 $7x+2y=84$ 與 $3x+2y=60$］$\implies C = 5(6) + 4(21) = 114$<br>
+            • $(18, 3)$［解 $3x+2y=60$ 與 $x+2y=24$］$\implies C = 5(18) + 4(3) = 90 + 12 =$ <strong>102 元</strong> (最低)<br>
+            • $(24, 0) \implies C = 120$<br>
+            <strong>答案：</strong>每天使用第 1 種飼料 18 公斤、第 2 種飼料 3 公斤，最低飼料成本為 <strong>102 元</strong>。
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== 5. 觀念隨堂測驗 ==================== -->
+    <section id="sec-quiz" class="view-section">
+      <div style="margin-bottom: 1.5rem;">
+        <h2 style="font-size: 1.5rem; color: var(--text-main); margin-bottom: 0.3rem;">🧠 觀念自我診斷測驗</h2>
+        <p style="color: var(--text-muted);">測試您對線性規劃、半平面、斜率與頂點法的掌握度，點選選項即可獲得即時回饋與詳解！</p>
+      </div>
+
+      <div id="quizContainer">
+        <!-- 由 JavaScript 動態生成互動題目 -->
+      </div>
+    </section>
+  </main>
+
+  <footer style="text-align: center; padding: 2rem; border-top: 1px solid var(--border-subtle); color: var(--text-dim); font-size: 0.85rem;">
+    <div>臺灣高中 108 課綱 · 選修數學乙(下) 課本第一章 線性規劃</div>
+    <div style="margin-top: 0.35rem;">完全互動式 HTML5 + Canvas 視覺化數學輔助教材</div>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
